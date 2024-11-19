@@ -1,6 +1,9 @@
-* {
-  font-family: 'ProFontWindows';
-  src: url('pfw.ttf') format('truetype');
+@font-face {
+  font-family: 'profontwindowsregular';
+  src: url('pfw-webfont.woff2') format('woff2'),
+       url('pfw-webfont.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
 }
 
 body {

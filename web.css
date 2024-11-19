@@ -1,7 +1,8 @@
 * {
   font-family: 'profontwindowsregular';
   src: url('pfw-webfont.woff2') format('woff2'),
-       url('pfw-webfont.woff') format('woff');
+       url('pfw-webfont.woff') format('woff'),
+       url('pfw.ttf') format('truetype');
 }
 
 body {

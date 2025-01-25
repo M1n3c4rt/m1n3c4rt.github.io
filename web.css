@@ -37,7 +37,7 @@ h1 {
   width: 100%;
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-around;
+  justify-content: left;
 }
 
 .thing {
@@ -46,7 +46,6 @@ h1 {
 }
 
 .thing_image {
-  
   object-fit: contain;
   width: 400px;
   height: 200px;
@@ -55,7 +54,7 @@ h1 {
   z-index: -10;
 }
 
-.thing_title {
+.thing_title, .shuffle_button {
   width: 400px;
   text-align: center;
   color: #ccccdd;
@@ -71,4 +70,26 @@ h1 {
 .thing_desc {
   width: 400px;
   text-align: center;
+}
+
+.shitpost_head {
+  left: 0;
+  display: inline;
+}
+
+.shitposts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  
+}
+
+.shitpost_image {
+  height: 200px;
+  width: auto;
+  padding-bottom: 20px;
+}
+
+.back {
+  color: #ccccdd;
 }

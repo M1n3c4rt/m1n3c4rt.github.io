@@ -282,7 +282,7 @@
 				}
 				var n = prompt("New hint:",current.hint)
 				if (n != null) {
-					current.hint = n.replaceAll(/(?<=\[)0+/g,"")
+					current.hint = n.replaceAll(/(?<=\[)0+(?=\d)/g,"")
 				}
 				renderTree()
 			}

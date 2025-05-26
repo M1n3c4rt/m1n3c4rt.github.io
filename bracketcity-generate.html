@@ -71,7 +71,7 @@
 					reader.onload = () => {
 						var fileText = reader.result;
 						tree = JSON.parse(fileText)
-						renderTree()
+						try { renderTree() } catch { alert("Error reading the file. Please try again."); renderInit() }
 					};
 					reader.onerror = () => {
 						alert("Error reading the file. Please try again.", "error");
@@ -282,7 +282,7 @@
 				}
 				var n = prompt("New hint:",current.hint)
 				if (n != null) {
-					current.hint = n
+					current.hint = n.replaceAll(/(?<=\[)0+/g,"")
 				}
 				renderTree()
 			}

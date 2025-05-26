@@ -13,12 +13,25 @@
 			<meta property="og:description" content="custom bracket city puzzle generator !!" />
 			<meta name="theme-color" content="#b592db">
 		</head>
-        <body>
+        <body onload="renderInit()">
             <p id="title" style="font-size: 50px;">Bracket City Puzzle Generator</p>
             <a class="bracketcitybutton" id="startbutton" onclick="init()">start!</button>
         </body>
 		<script>
-			var tree = {}
+			var tree = {"final":"","subhints":[]}
+
+			function renderInit() {
+				var head = document.createElement("div")
+				head.setAttribute("id","mainHead")
+				head.appendChild(document.createElement("hr"))
+				uplink = document.createElement("a")
+				uplink.setAttribute("class","bracketcitybutton")
+				uplink.setAttribute("id","uplink")
+				uplink.setAttribute("onclick","promptUpload()")
+				uplink.appendChild(document.createTextNode("Upload JSON"))
+				head.appendChild(uplink)
+				document.body.appendChild(head)
+			}
 
 			function init() {
 				var p = prompt("Enter headline:","")
@@ -44,12 +57,12 @@
 					file = e.target.files[0]; 
 	
 					if (!file) {
-						showMessage("No file selected. Please choose a file.", "error");
+						alert("No file selected. Please choose a file.", "error");
 						return;
 					}
 	
 					if (!file.type.startsWith("application/json")) {
-						showMessage("Unsupported file type. Please select a JSON file.", "error");
+						alert("Unsupported file type. Please select a JSON file.", "error");
 						return;
 					}
 	
@@ -61,7 +74,7 @@
 						renderTree()
 					};
 					reader.onerror = () => {
-						showMessage("Error reading the file. Please try again.", "error");
+						alert("Error reading the file. Please try again.", "error");
 					};
 					reader.readAsText(file);
 				}

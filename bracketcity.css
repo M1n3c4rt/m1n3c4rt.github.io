@@ -1,0 +1,83 @@
+.startbutton {
+  display: block;
+  text-decoration: none;
+}
+
+.bracketcitylinks {
+  display: block;
+  max-width: fit-content;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.bracketcitybutton {
+  margin: 10px;
+  padding: 4px;
+  color: #b592db;
+  font-size: 15px;
+}
+
+.bracketcitybutton:hover, .bracketcityleaf:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.bracketcitymain {
+  font-size: 25px;
+  max-width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: #181818;
+  padding: 10px;
+}
+
+.bracketcityleaf {
+  color:#b592db;
+}
+
+.bracketcityinput {
+  display: block;
+  width: 100%;
+  background-color: #181818;
+  border: none;
+  border-bottom: solid 1px #888888;
+  color: #cccccc;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  font-size: 25px;
+}
+
+.bracketcityinput:focus {
+  outline: none;
+  background-color: #1f1f1f;
+}
+
+.bracketcityflavor {
+  padding-bottom: 20px;
+  font-size: 15px;
+}
+
+.bracketcityflavorcorrect {
+  color: #9ad9a5;
+}
+
+.bracketcityflavorincorrect {
+  color: #d98383;
+}
+
+.bracketcitygreen {
+  color: #9ad9a5;
+}
+
+.bracketcityresults {
+  color: #aaaaaa;
+  font-size: 15px;
+}
+
+.smalltext {
+  color: #aaaaaa;
+  font-size: 15px;
+  max-width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}

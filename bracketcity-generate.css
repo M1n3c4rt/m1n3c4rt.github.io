@@ -1,0 +1,41 @@
+
+.bracketcitybutton {
+  margin: 10px;
+  padding: 4px;
+  color: #b592db;
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.bracketcitybuttonstart {
+  margin-left: 50px;
+}
+
+.bracketcitybutton:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.bracketcitylistitem {
+  font-size: 20px;
+  margin: 10px;
+}
+
+.bracketcityseparator {
+  color: #63636a;
+  margin: 10px;
+}
+
+.bracketcityinvalid {
+  color: #d98383;
+}
+
+.bracketcityerror {
+  font-size: 10px;
+}
+
+.smalltext {
+  color: #aaaaaa;
+  font-size: 15px;
+  padding-left: 10px;
+}

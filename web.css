@@ -93,37 +93,3 @@ h1 {
 .back {
   color: #ccccdd;
 }
-
-.bracketcitybutton {
-  margin: 10px;
-  padding: 4px;
-  color: #b592db;
-  font-size: 15px;
-}
-
-.bracketcitybuttonstart {
-  margin-left: 50px;
-}
-
-.bracketcitybutton:hover {
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.bracketcitylistitem {
-  font-size: 20px;
-  margin: 10px;
-}
-
-.bracketcityseparator {
-  color: #63636a;
-  margin: 10px;
-}
-
-.bracketcityinvalid {
-  color: #d98383;
-}
-
-.bracketcityerror {
-  font-size: 10px;
-}

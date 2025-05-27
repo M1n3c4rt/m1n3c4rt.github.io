@@ -43,7 +43,7 @@
 			}
 
 			function promptDownload() {
-				var hashed = hashTree(tree,900)
+				var hashed = hashTree(tree,hashString(tree.final))
 				s = JSON.stringify(hashed)
 				const file = new File([s],"bracket_city_puzzle.json")
 				downloadFile(file)
@@ -71,7 +71,7 @@
 					reader.onload = () => {
 						var fileText = reader.result;
 						tree = JSON.parse(fileText)
-						tree = hashTree(tree,-900)
+						tree = hashTree(tree,-hashString(tree.final))
 						try { renderTree() } catch { alert("Error reading the file. Please try again."); renderInit() }
 					};
 					reader.onerror = () => {
@@ -321,6 +321,10 @@
 
 			function caesarCipher(s,n) {
 				return s.split("").map(x => String.fromCharCode(x.charCodeAt(0)+n)).join("")
+			}
+
+			function hashString(s) {
+				return s.split("").map(x => x.charCodeAt(0)).reduce((a,b)=>a+b,0)
 			}
 
 			function downloadFile(file) {

@@ -164,7 +164,7 @@ function renderTree() {
     playlink.setAttribute("class","bracketcitybutton")
     playlink.setAttribute("id","playlink")
     playlink.setAttribute("href","bracketcity.html")
-    playlink.appendChild(document.createTextNode("Play these puzzles ⇗ "))
+    playlink.appendChild(document.createTextNode("Play puzzles ⇗ "))
     head.appendChild(playlink)
 
     document.body.appendChild(head)

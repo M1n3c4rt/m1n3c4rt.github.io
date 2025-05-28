@@ -15,7 +15,7 @@ var greentext = {
     bracketsbefore: 0,
     location: [-1]
 }
-var originalHeadline = "this is a [0][1]"
+var originalHeadline = "Welcome to B[0] Neighbour[1]"
 
 function promptUpload() {
     var input = document.createElement("input")
@@ -39,6 +39,19 @@ function promptUpload() {
             var fileText = reader.result;
             tree = JSON.parse(fileText)
             originalHeadline = tree.final
+            stats = {
+                reveals: 0,
+                peeks: 0,
+                incorrect: 0,
+                keystrokes: 0
+            }
+            flavortext = ""
+            greentext = {
+                start: 0,
+                end: 0,
+                bracketsbefore: 0,
+                location: [-1]
+            }
             try { renderTree() } catch { alert("Error reading the file. Please try again."); renderInit() }
         };
         reader.onerror = () => {
@@ -75,8 +88,10 @@ function getFillableAnswers(crumbs,t) {
 }
 
 function manageInput(guess) {
+    if (getBrackets(tree.final).length == 0) {
+        return
+    }
     var matches = getFillableAnswers([],tree).filter(x => x[1].toLowerCase() == guess.toLowerCase())
-    var flavor = document.getElementById("flavor")
     if (matches.length == 0) {
         stats.incorrect += 1
         flavortext = "incorrect!"

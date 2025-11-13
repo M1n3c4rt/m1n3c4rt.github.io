@@ -521,14 +521,14 @@ const data = {
         "C-23",
         "C-38",
         "C-39",
-        "C-76",
-        "C-77"
+        "D-76",
+        "D-77"        
     ],
 
     "spamton_B" : [
         "C-23",
         "C-39",
-        "C-76"
+        "D-76"
     ],
 
     "tenna" : [
@@ -578,7 +578,7 @@ const data = {
     "the_dark_truth" : [
         "B-23",
         "B-24",
-        "C-26",
+        "C-36",
         "D-64",
         "D-72"
     ],
@@ -909,8 +909,8 @@ canvas.onmousedown = event => {
 canvas.onmousemove = event => {
     if (isDragging) {
         if (draggedNode === null) {
-            xoffset = Math.min(2000,Math.max(-2000,origxoffset+(dragxoffset-event.pageX)*zoom))
-            yoffset = Math.min(1000,Math.max(-1000,origyoffset+(dragyoffset-event.pageY)*zoom))
+            xoffset = Math.min(10000,Math.max(-10000,origxoffset+(dragxoffset-event.pageX)*zoom))
+            yoffset = Math.min(5000,Math.max(-5000,origyoffset+(dragyoffset-event.pageY)*zoom))
         } else {
             [balls[draggedNode].x, balls[draggedNode].y] = fromScreenCoords(origxoffset-dragxoffset+event.pageX,origyoffset-dragyoffset+event.pageY)
         }

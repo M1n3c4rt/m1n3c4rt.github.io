@@ -677,6 +677,13 @@ const data = {
         "C-2",
         "D-42",
         "D-45"
+    ],
+
+    "rude_buster" : [
+        "B-10",
+        "B-15",
+        "D-11",
+        "D-15"
     ]
 }
 
@@ -698,9 +705,7 @@ orphans = [
     "A-100",
     "B-1",
     "B-6",
-    "B-10",
     "B-12",
-    "B-15",
     "B-17",
     "B-27",
     "B-29",
@@ -710,8 +715,6 @@ orphans = [
     "C-27",
     "C-47",
     "D-10",
-    "D-11",
-    "D-15",
     "D-17",
     "D-18",
     "D-19",
@@ -1084,6 +1087,7 @@ nameMap = {
     "the_second_sanctuary": "Second Sanctuary",
     "mike": "Mike",
     "girl_next_door_bassline": "Girl Next Door (Bassline)",
+    "rude_buster": "Rude Buster"
 }
 
 ctx.canvas.width  = window.innerWidth;
@@ -1113,13 +1117,14 @@ class ball {
         ctx.fillStyle = this.color;
         ctx.fill();
         ctx.textAlign = "center"
-        ctx.font = `${30/zoom}px pixeloperator`
+        ctx.font = `${300/zoom/Math.max(10,nameMap[this.id].length)}px pixeloperator`
         ctx.fillStyle = "#ffffff";
         let [sx,sy] = toScreenCoords(this.x,this.y)
         if (nameMap[this.id]) {
             ctx.fillText(nameMap[this.id],sx,sy+3/zoom*this.radius);
         } else {
             ctx.fillText(this.id,sx,sy+3/zoom*this.radius);
+            console.log(this.id)
         }
     }
 }
@@ -1161,7 +1166,7 @@ Object.entries(data).forEach(([motif,tracks]) => {
     if (!nameMap[motif]) {
         console.log(motif)
     }
-    balls[motif] = new ball(Math.random()*500-250,Math.random()*500-250,20,motif,"#643db9")
+    balls[motif] = new ball(Math.random()*500-250,Math.random()*500-250,20,motif,"#54527aff")
     edges[motif] = []
     tracks.forEach(track => {
         if (!nameMap[track]) {

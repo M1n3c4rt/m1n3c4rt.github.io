@@ -7,8 +7,6 @@ w = document.getElementsByClassName("stuff")[0].clientWidth
 document.getElementsByClassName('intro')[0].setAttribute("style",`margin-left: ${(w%440)/2+20}px`)
 
 function updateAgeTime() {
-    console.log(new Date().getTime() - 1191221880000 )
-    console.log((new Date().getTime() - 1191221880000).toString())
     document.getElementById('agetime').textContent = ((new Date().getTime() - 1191221880000).toString())
 }
 

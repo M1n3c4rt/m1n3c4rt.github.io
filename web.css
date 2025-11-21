@@ -33,11 +33,15 @@ h1 {
   font-size: 150%;
 }
 
+.greyed {
+  color: #777788;
+}
+
 .stuff {
   width: 100%;
   display: flex;
   flex-wrap: wrap;
-  justify-content: left;
+  justify-content: center;
 }
 
 .thing {

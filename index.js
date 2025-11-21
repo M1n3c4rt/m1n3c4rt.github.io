@@ -1,6 +1,5 @@
 addEventListener("resize", (event) => {
     w = document.getElementsByClassName("stuff")[0].clientWidth
-    console.log(w)
     document.getElementsByClassName('intro')[0].setAttribute("style",`margin-left: ${(w%440)/2+20}px`)
 })
 w = document.getElementsByClassName("stuff")[0].clientWidth

@@ -1124,7 +1124,6 @@ class ball {
             ctx.fillText(nameMap[this.id],sx,sy+3/zoom*this.radius);
         } else {
             ctx.fillText(this.id,sx,sy+3/zoom*this.radius);
-            console.log(this.id)
         }
     }
 }
@@ -1163,15 +1162,9 @@ var balls = {}
 var edges = {}
 
 Object.entries(data).forEach(([motif,tracks]) => {
-    if (!nameMap[motif]) {
-        console.log(motif)
-    }
     balls[motif] = new ball(Math.random()*500-250,Math.random()*500-250,20,motif,"#54527aff")
     edges[motif] = []
     tracks.forEach(track => {
-        if (!nameMap[track]) {
-            console.log(track)
-        }
         balls[track] = new ball(Math.random()*500-250,Math.random()*50-250,15,track,"#b592db")
         edges[motif].push(track)
         if (edges[track]) {
@@ -1182,9 +1175,6 @@ Object.entries(data).forEach(([motif,tracks]) => {
     });
 });
 orphans.forEach(orphan => {
-    if (!nameMap[orphan]) {
-        console.log(orphan)
-    }
     balls[orphan] = new ball(Math.random()*500-250,Math.random()*50-250,15,orphan,"#9797b3")
     edges[orphan] = []
 });
@@ -1307,7 +1297,4 @@ document.onwheel = event => {
     let [newx,newy] = fromScreenCoords(event.pageX,event.pageY)
     xoffset += -newx+x
     yoffset += -newy+y
-    //console.log(x,newx,y,newy,oldzoom,zoom)
-    //xoffset = ((event.pageX - canvas.width/2)/oldzoom + xoffset)*(1-1/r) + xoffset*(1/r)
-    //yoffset = ((event.pageY - canvas.height/2)/oldzoom + yoffset)*(1-1/r) + yoffset*(1/r)
 }

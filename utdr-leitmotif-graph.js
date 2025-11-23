@@ -2,7 +2,6 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 var balls = {}
-var edges = {}
 let data = {}
 
 async function initiate() {
@@ -27,23 +26,23 @@ function mergeData(base, data) {
 
 function createTrees(newData) {
     mergeData(data, newData);
+
+    const seenTracks = [];
     Object.entries(newData.motifGroups).forEach(([motif,tracks]) => {
         balls[motif] = new ball(Math.random()*500-250,Math.random()*500-250,20,motif,"#54527aff")
-        edges[motif] = []
         tracks.forEach(track => {
-            balls[track] = new ball(Math.random()*500-250,Math.random()*50-250,15,track,"#b592db")
-            edges[motif].push(track)
-            if (edges[track]) {
-                edges[track].push(motif)
-            } else {
-                edges[track] = [motif]
+            if (!seenTracks.includes(track)) {
+                balls[track] = new ball(Math.random()*500-250,Math.random()*50-250,15,track,"#b592db")
+                seenTracks.push(track);
             }
+
+            balls[motif].children.push(balls[track]);
+            balls[track].parents.push(balls[motif]);
         });
     });
 
     newData.isolatedTracks.forEach(orphan => {
         balls[orphan] = new ball(Math.random()*500-250,Math.random()*50-250,15,orphan,"#9797b3")
-        edges[orphan] = []
     });
 }
 
@@ -56,20 +55,32 @@ ctx.fillStyle = "#1f1f1f";
 ctx.fill();
 ctx.beginPath();
 
+SPRING_CONSTANT = 0.0025
+IDEAL = 100
+PERMITTIVITY = 250
+FRICTION = 0.1
+GRAVITY = 0.0001
+
 class ball {
-    constructor(x,y,radius,id,color) {
+    parents = [];
+    children = [];
+    isEnabled = true;
+
+    vx = 0;
+    vy = 0;
+    ax = 0;
+    ay = 0;
+
+    constructor(x, y, radius, id, color) {
         this.x = x;
         this.y = y;
         this.radius = radius
         this.id = id
         this.color = color
-        this.vx = 0;
-        this.vy = 0;
-        this.ax = 0;
-        this.ay = 0;
     }
 
     draw() {
+        if (!this.isEnabled) return;
         ctx.beginPath();
         ctx.arc(...toScreenCoords(this.x,this.y), this.radius/zoom, 0, Math.PI * 2, true);
         ctx.closePath();
@@ -85,6 +96,44 @@ class ball {
             ctx.fillText(this.id,sx,sy+3/zoom*this.radius);
         }
     }
+
+    // Interacts with another ball, handling repulsion and spring physics.
+    // If connected, also draws the edge between. Never called if the node is held.
+    interact(ball) {
+        if (ball.isEnabled && this.id != ball.id) {
+            const dx = this.x - ball.x
+            const dy = this.y - ball.y
+            const dist = (dx**2 + dy**2)**0.5
+
+            const isChild = this.parents.includes(ball);
+            if (isChild) drawEdge(this.x, this.y, ball.x, ball.y);
+
+            if (isChild || this.children.includes(ball)) {
+                let spring = Math.max(-1000, Math.min(1000, -SPRING_CONSTANT * (dist - IDEAL)))
+                this.ax += spring * dx / dist;
+                this.ay += spring * dy / dist;
+            } else {
+                let repulsion = Math.min(1000,PERMITTIVITY/dist**1.5)
+                this.ax += repulsion * dx / dist;
+                this.ay += repulsion * dy / dist;
+            }
+        }
+    }
+
+    // This is used ONLY when the node is dragged.                                                i was here :3c - systemcymk
+    // Else, this is handled by interact(), for minor performance reasons.
+    drawEdges() {
+        Object.entries(this.parents).forEach(([_, ball]) => {
+            drawEdge(this.x, this.y, ball.x, ball.y);
+        });
+    }
+
+    // Applies motion at the end of every frame.
+    // Done separately from the interact() loop to ensure consistency in interactions.
+    applyMotion() {
+        this.x += this.vx;
+        this.y += this.vy;
+    }
 }
 
 function drawEdge(x1,y1,x2,y2) {
@@ -94,12 +143,6 @@ function drawEdge(x1,y1,x2,y2) {
     ctx.lineTo(...toScreenCoords(x2,y2));
     ctx.stroke();
 }
-
-SPRING_CONSTANT = 0.0025
-IDEAL = 100
-PERMITTIVITY = 250
-FRICTION = 0.1
-GRAVITY = 0.0001
 
 var xoffset = 0
 var yoffset = 0
@@ -123,41 +166,26 @@ function draw() {
     ctx.canvas.width  = window.innerWidth;
     ctx.canvas.height = window.innerHeight;
 
-    Object.entries(balls).forEach(([id,ball]) => {
-        Object.entries(balls).forEach(([idb,ballb]) => {
-            if (edges[id].includes(idb)) {
-                if (ball.x < ballb.x) {
-                    drawEdge(ball.x,ball.y,ballb.x,ballb.y);
-                }
-            }
-        })
-    })
+    // Process physics, draw edges
+    Object.entries(balls).forEach(([id, ball]) => {
+        if (id != draggedNode) {
+            ball.vx += ball.ax;
+            ball.vy += ball.ay;
+            ball.ax = -GRAVITY * ball.x - FRICTION * ball.vx
+            ball.ay = -GRAVITY * ball.y - FRICTION * ball.vy
+            Object.entries(balls).forEach(([_, ballb]) => {
+                ball.interact(ballb);
+            });
+        } else {
+            ball.drawEdges();
+        }
+    });
 
+    // Draw balls, apply physics
     Object.entries(balls).forEach(([id,ball]) => {
         ball.draw()
         if (id != draggedNode) {
-            ball.x += ball.vx
-            ball.y += ball.vy
-            ball.vx += ball.ax
-            ball.vy += ball.ay
-            ball.ax = -GRAVITY*ball.x-FRICTION*ball.vx
-            ball.ay = -GRAVITY*ball.y-FRICTION*ball.vy
-            Object.entries(balls).forEach(([idb,ballb]) => {
-                if (id != idb) {
-                    dx = ball.x-ballb.x
-                    dy = ball.y-ballb.y
-                    dist = (dx**2 + dy**2)**0.5
-                    if (edges[id].includes(idb)) {
-                        let spring = Math.max(-1000,Math.min(1000,-SPRING_CONSTANT*(dist-IDEAL)))
-                        ball.ax += spring*dx/dist
-                        ball.ay += spring*dy/dist
-                    } else {
-                        let repulsion = Math.min(1000,PERMITTIVITY/dist**1.5)
-                        ball.ax += repulsion*dx/dist
-                        ball.ay += repulsion*dy/dist
-                    }
-                }
-            });
+            ball.applyMotion();
         }
     });
 

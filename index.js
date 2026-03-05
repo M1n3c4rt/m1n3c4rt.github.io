@@ -10,3 +10,14 @@ function updateAgeTime() {
 }
 
 setInterval(updateAgeTime,1)
+
+function copyButton() {
+    navigator.clipboard.writeText(
+        "<a href=\"https://m1n3c4rt.github.io\" target=\"_blank\"><img src=\"https://m1n3c4rt.github.io/websitewhatchamacallit.webp\"></a>"
+    ).then(function() {
+        document.getElementById("buttondialog").textContent = "↓ copied!"
+        setTimeout(() => document.getElementById("buttondialog").textContent = "↓ click to copy!",2000)
+    }, function(err) {
+        document.getElementById("buttondialog").textContent = err
+    })
+}

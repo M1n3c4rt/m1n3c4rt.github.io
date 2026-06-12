@@ -1,8 +1,9 @@
 const EDGE_DISTANCE = 160;
 const UNFOCUS_DISTANCE = 130;
 const CULLING_DISTANCE = 120;
+const SLOW_DISTANCE = 250;
 
-const OFFSCREEN_SKIP = 2;
+const OFFSCREEN_SKIP = 8;
 
 SPRING_CONSTANT = 0.0025
 IDEAL = 100
@@ -12,8 +13,11 @@ PERMITTIVITY = 1000 //250
 
 class node {
     data; // This is the raw JSON definition of this node, used to display names, subtitles, etc.
-    impliedPrefix; // If the prefix is 'implied', just use the ID of the node.
     isIsolate = true; // Used ONLY on tree refresh, to apply the isolate color style.
+
+    group; // What group the ball is in.
+    groupID; // ID of the ball group.
+    shouldDisambiguate; // If the track has a duplicate, always show its subtitle.
 
     isEnabled = true; // Handles if the node should be processed in drawing and physics calculations
     inFocus = false; // Tracks if this node is in the camera's focus. Handled by index.js.
@@ -27,8 +31,8 @@ class node {
 
     id; // Must be present.
     get name() { return this.data.name || this.data; }
-    get subtitle() { return this.data.subtitle; } // May be null!
-    get prefix() { return this.impliedPrefix ? this.id : this.data.prefix; }
+    get subtitle() { return this.data.subtitle || this.group?.name; } // May be null!
+    get prefix() { return this.data.prefix || this.group?.prefix; }
 
     // Relationships!
     motifs = [];
@@ -36,6 +40,7 @@ class node {
 
     // Rendering information
     x = 0; y = 0;
+    spawnX = 0; spawnY = 0;
     sides = 0; angle = 0;
 
     // Scene information
@@ -58,10 +63,12 @@ class node {
         this.color = this.data.color ?? "#00000000";
         this.outline = this.data.outline ?? "#00000000";
         this.thin = this.data.thin ?? false;
-        this.x = (x == undefined) ? node.randomPosition() : x;
-        this.y = (y == undefined) ? node.randomPosition() : y;
-        this.impliedPrefix = (this.id.replace(/[0-9\-NX]*/, '') == '');
+        this.spawnX = this.x = x ?? node.randomPosition();
+        this.spawnY = this.y = y ?? node.randomPosition();
+        this.reloadSearchTerms();
+    }
 
+    reloadSearchTerms() {
         this.searchTerms = [
             {
                 weight: 1,
@@ -81,7 +88,12 @@ class node {
     // Draws the whole ball unto the screen using `bodyLayer` and `textLayer`.
     // TODO: I wonder if we can rewrite this to be cleaner in the future -w-"
     draw() {
-        if (this.x != this.x) throw "Position is NaN, something went wrong! - id: " + this.id + ", node name: " + this.name;
+        if (this.x != this.x) {
+            throw ("Position is NaN, something went wrong! - id: " + this.id + ", node name: " + this.name);
+            // console.warn("Position is NaN, something went wrong! - id: " + this.id + ", node name: " + this.name);
+            // this.x = 0;
+            // this.y = 0;
+        }
         if (!this.isEnabled && !this.inFocus) return;
 
         [this.sx, this.sy] = this.camera.toScreenCoords(this.x, this.y);
@@ -104,10 +116,10 @@ class node {
         ctx2.strokeStyle = "#000000";
 
         ctx2.lineWidth = node.getStrokeZoomed(4, this.camera.zoom);
-        ctx2.globalAlpha = this.inFocus ? 1 : node.textAlpha(this.scenedist);
+        ctx2.globalAlpha = this.inFocus ? 1 : node.textAlpha(this.scenedist, this.camera);
         const textY = this.sy + this.getTextOffset();
 
-        if (!this.prefix) {
+        if (!this.inFocus || !this.prefix) {
             ctx2.textAlign = "center";
             node.drawText(ctx2, this.name, this.sx, textY);
         } else {
@@ -127,7 +139,7 @@ class node {
             node.drawText(ctx2, this.prefix, preX, textY);
         }
 
-        if (this.subtitle) {
+        if (this.shouldDisambiguate || this.inFocus && this.subtitle) {
             ctx.textAlign = "center";
             ctx.fillStyle = "#7f7f7f";
             ctx.strokeStyle = "#000000";
@@ -144,6 +156,28 @@ class node {
         ctx2.globalAlpha = 1;
     }
 
+    // `origin` - id of what initially called the function
+    // `ball` - which node propagated the function
+    attachPosition(ball, origin) {
+        let [motifsX, motifsY] = [0, 0];
+        this.motifs.forEach(ball2 => {
+            motifsX += ball2.x;
+            motifsY += ball2.y;
+        });
+
+        motifsX /= Math.max(1, this.motifs.length);
+        motifsY /= Math.max(1, this.motifs.length);
+        this.x = this.spawnX + ball.x + motifsX;
+        this.y = this.spawnY + ball.y + motifsY;
+
+        // [this.motifs, this.children].forEach(nodes => {
+            this.children.forEach(ball2 => {
+                if (ball2.id == ball.id || ball2.id == origin) return;
+                ball2.attachPosition(this, origin);
+            });
+        // });
+    }
+
     get offscreenX() {
         if (-CULLING_DISTANCE > this.sx) return 1;
         if (this.sx > camera.width + CULLING_DISTANCE) return -1;
@@ -156,10 +190,18 @@ class node {
         return 0;
     }
 
+    marginallyVisible = false; // Used to track if a node's edge may still be visible.
     get isOffscreen() {
         var offscreen = 0;
         if (-CULLING_DISTANCE > this.sx || this.sx > camera.width + CULLING_DISTANCE) return true;
         if (-CULLING_DISTANCE > this.sy || this.sy > camera.height + CULLING_DISTANCE * 2) return true;
+        return false;
+    }
+
+    get isSlow() {
+        var offscreen = 0;
+        if (-SLOW_DISTANCE > this.sx || this.sx > camera.width + SLOW_DISTANCE) return true;
+        if (-SLOW_DISTANCE > this.sy || this.sy > camera.height + SLOW_DISTANCE) return true;
         return false;
     }
 
@@ -266,7 +308,10 @@ class node {
 
     // The random position applied to a node on creation.
     static randomPosition() {
-        return Math.random() * 750 - 375;
+        // return Math.random() * 0.001 - 0.0005;
+        // return Math.random() * 750 - 375;
+        // return Math.random() * 2000 - 1000;
+        return Math.random() * 500 - 250;
     }
 
     // Velocity & acceleration
@@ -275,18 +320,16 @@ class node {
 
     // Interacts with another ball, handling repulsion and spring physics.
     // If connected, also draws the edge between. Never called if the node is held.
-    interact(ball) {
+    interact(ball, deltaTime) {
         if (!ball.isEnabled || this.id == ball.id) return;
 
         const isChild = this.motifs.includes(ball);
         const linedist = Math.min(this.dist, ball.dist);
         if (isChild) this.drawEdge(ball, node.lineAlpha(linedist), node.lineWeight(linedist));
 
-        if (this.isOffscreen && (this.skippedFrames < OFFSCREEN_SKIP - 1)) return;
-
         const dx = this.x - ball.x
         const dy = this.y - ball.y
-        const dist = pythagoras(dx, dy)
+        const dist = Math.max(0.0001, pythagoras(dx, dy))
 
         if (isChild || this.children.includes(ball)) {
             let spring = Math.max(-2000, Math.min(2000, -SPRING_CONSTANT * (dist - IDEAL)))
@@ -341,6 +384,9 @@ class node {
         if (offscreenX && (offscreenX == ball.offscreenX)) return;
         if (offscreenY && (offscreenY == ball.offscreenY)) return;
 
+        this.marginallyVisible = true;
+        ball.marginallyVisible = true;
+
         const ctx = ball.edgeLayer;
 
         ctx.strokeStyle = "#92a39bff";
@@ -358,17 +404,21 @@ class node {
 
     // Applies motion at the end of every frame.
     // Done separately from the interact() loop to ensure consistency in interactions.
+    accumulatedTime = 0;
     applyMotion(deltaTime) {
-        if (this.isOffscreen && this.skippedFrames < OFFSCREEN_SKIP) {
+        this.accumulatedTime += deltaTime;
+        if (!this.marginallyVisible && this.isSlow && this.skippedFrames < OFFSCREEN_SKIP) {
             this.skippedFrames++;
             return;
         }
 
-        this.x += this.vx * deltaTime * this.skippedFrames;
-        this.y += this.vy * deltaTime * this.skippedFrames;
-        this.angle += Math.min(25, pythagoras(this.vx, this.vy) * 0.125 * deltaTime) * Math.sign(this.vx) * Math.sign(this.vy);
+        this.x += this.vx * this.accumulatedTime;
+        this.y += this.vy * this.accumulatedTime;
+        this.angle += Math.min(25, pythagoras(this.vx, this.vy) * 0.125 * this.accumulatedTime) * Math.sign(this.vx) * Math.sign(this.vy);
 
         this.skippedFrames = 1;
+        this.accumulatedTime = 0;
+        this.marginallyVisible = false;
     }
 
     // Quick function to add a child to this node.
@@ -379,6 +429,8 @@ class node {
 
         this.isolate = false;
         ball.isolate = false;
+
+        ball.attachPosition(this, this.id);
     }
 
     // Force-applies the specified style to this node.
@@ -403,12 +455,20 @@ class node {
         return this;
     }
 
+    // Apply the specified group to this node.
+    applyGroup(group, id) {
+        this.group = group;
+        this.groupID = id;
+        this.reloadSearchTerms();
+        return this;
+    }
+
     static bodyAlpha(dist) {
         return Math.max(0.5, Math.min(1, Math.max(75 / dist + 0.5, 100 / dist - 1.5)));
     }
 
-    static textAlpha(dist) {
-        return Math.max(0.5, Math.min(1, Math.max(50 / dist + 0.5, 100 / dist - 1.5)));
+    static textAlpha(dist, camera) {
+        return Math.max(0.5, Math.min(1, Math.max(50 / dist + 0.5, 100 / dist - 1.5))) * Math.min(1, 2 / (camera?.zoom ?? 1));
     }
 
     static lineAlpha(dist) {
@@ -445,7 +505,10 @@ class searchnode {
     draw(x, y) {
         this.sx = x; this.sy = y;
         if (!this.ball.isEnabled) this.ctx.globalAlpha = 0.25;
-        
+
+        const testY = this.sy - searchScroll;
+        if (testY > (searchHeight + SEARCH_LOAD) || testY < -SEARCH_LOAD) return;
+
         node.drawGeneric(this);
         this.ctx.globalAlpha = 1;
 

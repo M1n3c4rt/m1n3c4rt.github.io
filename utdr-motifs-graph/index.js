@@ -4,36 +4,9 @@
 
 const DRAW_FPS = 60;
 const DRAW_DELTA = 1000 / DRAW_FPS;
-const SEARCH_HEIGHT = 36;
-const SEARCH_LOAD = 120;
-const SEARCH_GAP = 69;
 
 const layers = [...document.getElementById("canvas").children];
 const camera = new Camera(layers);
-const searchCamera = new Camera([document.getElementById("searchlayer")]);
-const searchLayer = searchCamera.scenes[0];
-const searchView = searchLayer.parentNode;
-
-let searchBounds = searchView.getBoundingClientRect();
-let searchHeight = searchBounds.bottom - searchBounds.top - SEARCH_GAP;
-let searchScroll = 0;
-
-// For the UI + Search menu !!
-const sfxPagerIn = new Audio(rootDirectory + '/sfx/snd_select.wav');
-const sfxPagerOut = new Audio(rootDirectory + '/sfx/snd_smallswing.wav');
-const sfxNope = new Audio(rootDirectory + '/sfx/snd_cantselect.wav');
-const sfxFocus = new Audio(rootDirectory + '/sfx/snd_menumove.wav');
-const sfxExit = new Audio(rootDirectory + '/sfx/snd_cantselect.wav');
-const sfxToggle = new Audio(rootDirectory + '/sfx/snd_equip.wav');
-
-sfxPagerOut.volume = 0.75;
-sfxNope.volume = 0.5;
-sfxExit.volume = 0.5;
-
-// ui elements!
-const toggle = document.getElementById("toggle");
-const search = document.getElementById("search");
-const speed = document.getElementById("speed");
 
 var raf; // I'm not sure why this is being kept track of, but... ok!
 var cursor = {
@@ -51,12 +24,16 @@ var bounds = {
     x: 0, y: 0
 }
 
-async function loadJson(path, reloadAll) {
+let bandcampData = {}
+async function loadJson(path, bandcampPath) {
     let rawJson = await fetch(path);
-    if (!rawJson.ok) throw new Error(`Couldn't retrieve JSON! ${rawJson.status} - ${rawJson.statusText}`);
+    if (!rawJson.ok) throw new Error(`FATAL: Couldn't retrieve Leitmotifs JSON! ${rawJson.status} - ${rawJson.statusText}`);
 
-    let data = rawJson.json();
-    data.then(refreshTree)
+    let rawBand = await fetch(bandcampPath);
+    if (!rawBand.ok) console.warn(`Couldn't retrieve Bandcamp JSON! ${rawBand.status} - ${rawBand.statusText}`);
+    else bandcampData = (await rawBand.json()).bandcamp;
+
+    rawJson.json().then(refreshTree);
 }
 
 var balls = {}
@@ -122,18 +99,19 @@ function refreshTree(newData) {
         if (track.style) balls[id].applyStyle(track.style)
         else if (track.isMinor) balls[id].applyStyle("minor")
 
-        if (allNames[balls[id].name]) {
+        const lowerName = balls[id].name.toLowerCase();
+        if (allNames[lowerName]) {
             balls[id].shouldDisambiguate = true;
-            allNames[balls[id].name].shouldDisambiguate = true;
+            allNames[lowerName].shouldDisambiguate = true;
         }
-        allNames[balls[id].name] = balls[id];
+        allNames[lowerName] = balls[id];
 
         Object.entries(newData.groups).forEach(([gID, group]) => {
             if (id.startsWith(gID)) balls[id].applyGroup(group, gID);
         });
     });
 
-    searchResults.push(...Object.values(balls));
+    loadInitialSearch();
 }
 
 FRICTION = 0.1
@@ -150,11 +128,11 @@ const HALFGRID = 46; // Half of the `GridSquare.png`'s size in pixels.
 let edgeLerp = 0;
 let lastDrawTime = 0;
 function draw(timestamp) {
-    if (speed.value < -4) speed.value = -4;
-    else if (speed.value > 1.5) speed.value = 1.5;
+    // if (speed.value < -4) speed.value = -4;
+    // else if (speed.value > 1.5) speed.value = 1.5;
 
     // If you somehow have perfect 60 FPS, this will always be 1.
-    let deltaTime = Math.min(4, Math.min(DRAW_FPS, timestamp - lastDrawTime) * speed.value / DRAW_DELTA);
+    let deltaTime = Math.min(4, Math.min(DRAW_FPS, timestamp - lastDrawTime) / DRAW_DELTA);
     // console.log(deltaTime);
     lastDrawTime = timestamp;
 
@@ -210,7 +188,7 @@ function draw(timestamp) {
 
     if (balls[draggedNode]) {
         const node = balls[draggedNode];
-        edgeLerp = freyalerp(edgeLerp, node.onScreenEdge ? 1 : 0, 40, deltaTime);
+        edgeLerp = freyalerp(edgeLerp, node.onScreenEdge ? 1 : 0, 150, deltaTime);
 
         if (edgeLerp > 0) {
             camera.x = freyalerp(camera.x, lerp(camera.x, balls[draggedNode].x, edgeLerp), 20, deltaTime);
@@ -229,17 +207,7 @@ function draw(timestamp) {
     // document.body.style.backgroundPositionY = `${-(camera.y - HALFGRID) / camera.zoom + camera.height * 0.5}px`;
     // document.body.style.backgroundSize = `${50 / camera.zoom}px`;
 
-    searchDraw();
     raf = window.requestAnimationFrame(draw);
-}
-
-function searchDraw() {
-    // Draw balls in search menu
-    searchCamera.refresh();
-    searchLayer.style.height = `${searchResults.length * SEARCH_GAP}px`
-    Object.entries(searchResults).forEach(([index, ball]) => {
-        ball.searchBall.draw(32, index * SEARCH_GAP + SEARCH_HEIGHT);
-    });
 }
 
 var isDragging = false
@@ -268,14 +236,18 @@ function select(event, radius = 1.5) {
 }
 canvas.ondblclick = select
 
+function setCursorPos(x, y) {
+    if (x) cursor.x = x;
+    if (y) cursor.y = y;
+}
+
 function dragStart(event, radius = 1.5) {
     isDragging = true
     camera.focus.blocked = true;
 
     dragOffset.x = event.pageX
     dragOffset.y = event.pageY
-    cursor.x = event.pageX;
-    cursor.y = event.pageY;
+    setCursorPos(event.pageX, event.pageY);
     
     draggedNode = null
     Object.entries(balls).forEach(([id,ball]) => {
@@ -325,8 +297,7 @@ canvas.addEventListener("touchstart", event => {
 }, { passive : false });
 
 function dragMove(event) {
-    cursor.x = event.pageX;
-    cursor.y = event.pageY;
+    setCursorPos(event.pageX, event.pageY);
     if (isDragging) {
         if (draggedNode === null) {
             camera.x = dragAnchor.x + (dragOffset.x - cursor.x) * camera.zoom
@@ -392,8 +363,7 @@ function dragEnd(event) {
     camera.focus.blocked = false;
     draggedNode = null
     document.body.style.cursor = "auto"
-    cursor.x = event.pageX;
-    cursor.y = event.pageY;
+    setCursorPos(event.pageX, event.pageY);
 }
 
 function touchEnd(event) {
@@ -426,137 +396,6 @@ document.onwheel = event => {
     camera.y += -newy+y
 }
 
-var ballInFocus;
-function setBallFocus(ball, sound = true) {
-    if (ballInFocus) ballInFocus.inFocus = false;
-    ballInFocus = ball;
-
-    if (ballInFocus) {
-        ballInFocus.inFocus = true;
-        camera.focus.enabled = true;
-
-        const index = searchResults.indexOf(ballInFocus);
-        if (index > -1) {
-            searchBounds = searchView.getBoundingClientRect();
-            searchHeight = searchBounds.bottom - searchBounds.top - SEARCH_GAP;
-            const newScroll = index * SEARCH_GAP;
-
-            console.log(searchView.scrollTop);
-            if (newScroll < searchView.scrollTop) {
-                searchView.scrollTop = newScroll;
-            } else if (newScroll > searchView.scrollTop + searchHeight) {
-                searchView.scrollTop = newScroll - searchHeight; 
-            }
-        }
-        if (sound) {
-            sfxPagerIn.currentTime = 0;
-            sfxPagerIn.play();
-        }
-
-        if (ballInFocus.trackID) {
-            // regex: item_id=([0-9]+)
-            fetch("https://tobyfox.bandcamp.com/track/" + ballInFocus.trackID)
-                .then((response) => {
-                    const data = response.body.getElementById("pagedata");
-                    console.log(data);
-                });
-        }
-    } else {
-        camera.focus.enabled = false;
-        if (sound) {
-            sfxPagerOut.currentTime = 0;
-            sfxPagerOut.play();
-        }
-    }
-}
-
-function unfocusBall(newIndex = 0) {
-    searchIndex = newIndex % searchResults.length;
-    while (searchIndex < 0) searchIndex += searchResults.length;
-    setBallFocus(null);
-}
-
-const searchResults = [];
-let searchIndex = 0;
-
-function changeSelect(change) {
-    let index = searchResults.indexOf(ballInFocus);
-    if (index < 0) index = searchIndex - 1;
-
-    index += change;
-    index %= searchResults.length;
-
-    while (index < 0) index += searchResults.length;
-    setBallFocus(searchResults[index]);
-}
-
-search.addEventListener("keydown", ({key}) => {
-    if (key === "Enter") {
-        if (searchResults.length > 0) {
-            setBallFocus(searchResults[searchIndex]);
-            searchIndex = (searchIndex + 1) % searchResults.length;
-        } else {
-            setBallFocus(null, false);
-            sfxNope.currentTime = 0;
-            sfxNope.play();
-        }
-    } else if (key === "ArrowUp") changeSelect(-1);
-    else if (key === "ArrowDown") changeSelect(1);
-})
-
-search.addEventListener("input", () => {
-    if (ballInFocus) unfocusBall();
-
-    // the evil regex ever. ,,
-    // const regexStr = "[(" + search.value.replace(/[#-.]|[[-^]|[?|{}]/g, '\\$&').split(" ").join(")(") + ")]";
-
-    // significantly less evil, actually working regex. ,,,,
-    searchResults.length = 0;
-
-    if (search.value == '') {
-        searchResults.push(...Object.values(balls));
-    } else {
-        const regexStr = search.value.replace(/[#-.]|[[-^]|[?|{}]/g, '\\$&');
-        const regex = new RegExp(regexStr, "i");
-
-        Object.entries(balls).forEach(([id, ball]) => {
-            if (ball.filter(regex)) searchResults.push(ball);
-        });
-
-        searchResults.sort((a, b) => a.matchString.localeCompare(b.matchString));
-        searchResults.sort((a, b) => b.matchPercent - a.matchPercent);
-    }
-})
-
-toggle.addEventListener("click", () => {
-    console.log("nya");
-    if (ballInFocus) {
-        sfxToggle.currentTime = 0;
-        sfxToggle.play();
-        ballInFocus.isEnabled = !ballInFocus.isEnabled;
-    } else {
-        sfxNope.currentTime = 0;
-        sfxNope.play();
-    }
-})
-
-searchLayer.onwheel = event => {
-    event.stopPropagation();
-}
-
-searchLayer.onmousedown = event => {
-    event.stopPropagation();
-    const ballIndex = Math.floor((event.pageY - searchLayer.getBoundingClientRect().top) / SEARCH_GAP);
-    if (searchResults[ballIndex]) {
-        setBallFocus(searchResults[ballIndex]);
-        searchIndex = ballIndex + 1;
-    }
-}
-
-searchLayer.onmouseup = event => {
-    event.stopPropagation();
-}
-
 document.addEventListener("keydown", ({key}) => {
     if (key === "Escape") {
         if (ballInFocus) unfocusBall();
@@ -584,21 +423,5 @@ document.addEventListener("keyup", ({key}) => {
     else if (key2 === "d") movement.D = 0;
 })
 
-search.addEventListener("focus", ({}) => {
-    sfxFocus.currentTime = 0;
-    sfxFocus.play();
-})
-
-// search.addEventListener("blur", ({}) => {
-//     sfxExit.currentTime = 0;
-//     sfxExit.play();
-// })
-
-searchView.addEventListener("scroll", ({}) => {
-    // console.log(searchView.scrollTop);
-    searchScroll = searchView.scrollTop;
-    searchDraw();
-})
-
 window.onload = (e) => raf = window.requestAnimationFrame(draw);
-loadJson(rootDirectory + "/utdr-leitmotif-graph.json");
+loadJson(rootDirectory + "/utdr-leitmotif-graph.json");//, rootDirectory + "/utdr-bandcamp.json");

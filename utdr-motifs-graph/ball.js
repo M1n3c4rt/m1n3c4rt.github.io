@@ -1,5 +1,5 @@
 const EDGE_DISTANCE = 160;
-const UNFOCUS_DISTANCE = 130;
+const UNFOCUS_DISTANCE = 160;
 const CULLING_DISTANCE = 120;
 const SLOW_DISTANCE = 250;
 
@@ -13,6 +13,7 @@ PERMITTIVITY = 1000 //250
 
 class node {
     data; // This is the raw JSON definition of this node, used to display names, subtitles, etc.
+    trackID; // Used in Bandcamp integration.
     isIsolate = true; // Used ONLY on tree refresh, to apply the isolate color style.
 
     group; // What group the ball is in.
@@ -62,9 +63,11 @@ class node {
         this.data = jsonDefinition;
         this.color = this.data.color ?? "#00000000";
         this.outline = this.data.outline ?? "#00000000";
+        this.shouldDisambiguate = this.data.disambiguate ?? false;
         this.thin = this.data.thin ?? false;
         this.spawnX = this.x = x ?? node.randomPosition();
         this.spawnY = this.y = y ?? node.randomPosition();
+        this.trackID = this.data.trackID ?? bandcampData[this.id]?.trackID ?? null;
         this.reloadSearchTerms();
     }
 
@@ -108,7 +111,7 @@ class node {
         const ctx2 = this.textLayer;
 
         // Draw the body
-        ctx.globalAlpha = this.inFocus ? 1 : node.bodyAlpha(this.scenedist);
+        ctx.globalAlpha = this.inFocus ? 1 : node.bodyAlpha(this.scenedist, this.matchPercent);
         if (this.sides <= 0) node.drawBall(this);
         else node.drawPolygon(this);
 
@@ -348,6 +351,8 @@ class node {
         this.matchPercent = 0;
         this.matchString = null;
 
+        if (sub == '') return true;
+
         this.searchTerms.forEach((data) => {
             data.terms.forEach((str) => {
                 if (!str) return;
@@ -443,15 +448,17 @@ class node {
 
     // Apply the default style to this node.
     resetStyle(id) {
+        this.style = "default";
         this.forceStyle(data.styles.default);
         return this;
     }
 
     // Apply the specified style (or the current style) to this node.
-    applyStyle(id) {
+    applyStyle(id, fallbacks) {
         if (id) this.style = id;
         const style = data.styles[this.style];
         if (style) this.forceStyle(style);
+        else if (fallbacks.length > 0) this.applyStyle(fallbacks.shift(), fallbacks);
         return this;
     }
 
@@ -459,12 +466,13 @@ class node {
     applyGroup(group, id) {
         this.group = group;
         this.groupID = id;
+        if (this.group.style) this.applyStyle(this.group.style + "-" + this.style, [this.style]);
         this.reloadSearchTerms();
         return this;
     }
 
-    static bodyAlpha(dist) {
-        return Math.max(0.5, Math.min(1, Math.max(75 / dist + 0.5, 100 / dist - 1.5)));
+    static bodyAlpha(dist, matchPercent) {
+        return Math.max(0.5, Math.min(1, Math.max(75 / dist + 0.5, 100 / dist - 1.5) + (matchPercent ?? 0)));
     }
 
     static textAlpha(dist, camera) {
@@ -482,57 +490,5 @@ class node {
     // Text stroke.
     static getStrokeZoomed(size, zoom) {
         return Math.max(size, size / zoom);
-    }
-}
-
-class searchnode {
-    sx; sy;
-    camera; bodyLayer;
-    constructor(ball, camera) {
-        this.ball = ball;
-        this.camera = camera;
-        this.bodyLayer = camera.layers[0];
-    }
-
-    get ctx() { return this.bodyLayer; }
-    get color() { return this.ball.color; }
-    get outline() { return this.ball.outline; }
-    get inFocus() { return this.ball.inFocus; }
-    get radius() { return this.ball.radius; }
-    get angle() { return this.ball.angle; }
-    get sides() { return this.ball.sides; }
-
-    draw(x, y) {
-        this.sx = x; this.sy = y;
-        if (!this.ball.isEnabled) this.ctx.globalAlpha = 0.25;
-
-        const testY = this.sy - searchScroll;
-        if (testY > (searchHeight + SEARCH_LOAD) || testY < -SEARCH_LOAD) return;
-
-        node.drawGeneric(this);
-        this.ctx.globalAlpha = 1;
-
-        const xpos = this.sx + 36;
-        const ypos = this.ball.subtitle ? this.sy : this.sy + 8;
-
-        this.ctx.textAlign = "left"
-        this.ctx.strokeStyle = "#000000";
-        this.ctx.fillStyle = "#ffffff";
-        this.ctx.lineWidth = node.getStrokeZoomed(4, this.camera.zoom);
-
-        if (!this.ball.prefix) {
-            node.drawText(this.ctx, this.ball.name, xpos, ypos);
-        } else {
-            const width = this.ctx.measureText(this.ball.prefix + " ").width;
-
-            node.drawText(this.ctx, this.ball.name, xpos + width, ypos);
-            this.ctx.fillStyle = "#ccff22";
-            node.drawText(this.ctx, this.ball.prefix, xpos, ypos);
-        }
-
-        if (this.ball.subtitle) {
-            this.ctx.fillStyle = "#7f7f7f";
-            node.drawText(this.ctx, this.ball.subtitle, xpos, ypos + this.camera.fontSize + 2);
-        }
     }
 }

@@ -13,7 +13,7 @@ class Camera {
 
     // Enforces screen limits.
     bounds = {
-        x: 7500, y: 5000
+        x: 2000, y: 2000
     };
 
     zoom = 1;
@@ -47,6 +47,24 @@ class Camera {
             this.y = freyalerp(this.y, this.focus.y, 10, deltaTime);
             if (this.focus.auto && this.x == this.focus.x && this.y == this.focus.y)
                 this.focus.enabled = false;
+        }
+    }
+
+    // Alternative to `refresh`. Use for simpler applications or when things break.
+    clear() {
+        const fontSize = Math.max(this.fontSize * 0.5, this.fontSize / this.zoom);
+
+        for (let i in this.layers) {
+            this.layers[i].clearRect(0, 0, this.width, this.height);
+            this.scenes[i].width  = this.scenes[i].clientWidth;
+            this.scenes[i].height = this.scenes[i].clientHeight;
+            this.layers[i].font = `${fontSize}px ${this.font}`;
+        }
+    }
+
+    clearArea(x, y, width, height) {
+        for (let i in this.layers) {
+            this.layers[i].clearRect(x, y, width, height);
         }
     }
 

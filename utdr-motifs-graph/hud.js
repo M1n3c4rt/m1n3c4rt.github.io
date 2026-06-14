@@ -53,7 +53,7 @@ function updateHUD(inc) {
 
 // Would love to use click here, but it messes with focusin
 function registerButtonPage(button, page) {
-    button.addEventListener("mousedown", (e) => {
+    button.addEventListener("click", (e) => {
         changePage(page, button);
     })
 }
@@ -62,32 +62,41 @@ registerButtonPage(infobutton, infoui);
 registerButtonPage(guidebutton, guideui);
 registerButtonPage(searchbutton, searchui);
 
-searchbutton.addEventListener("mousedown", (e) => {
+searchbutton.addEventListener("click", (e) => {
     searchDraw();
 })
 
-hudslide.addEventListener("focusin", (e) => {
-    // if (updateHUD(1)) e.target.click();
-    updateHUD(1);
-});
-hudslide.addEventListener("focusout", (e) => updateHUD(-1));
+// hudslide.addEventListener("focusin", (e) => {
+//     // if (updateHUD(1)) e.target.click();
+//     updateHUD(1);
+// });
+// hudslide.addEventListener("focusout", (e) => updateHUD(-1));
 
-let currentPage;
-let currentButton;
+let currentPage = null;
+let currentButton = null;
 function changePage(element, button) {
     sfxPagerIn.currentTime = 0;
     sfxPagerIn.play();
 
+    if (currentButton == button) {
+        if (button) updateHUD(-1);
+        button = null;
+    } else if (!currentButton) updateHUD(1);
+
     if (currentPage) {
-        currentPage.setAttribute("uivisible", false);
         if (currentButton) currentButton.setAttribute("selected", false);
+        if (element) currentPage.setAttribute("uivisible", false);
     }
 
-    element.setAttribute("uivisible", true);
-    if (button) button.setAttribute("selected", true);
+    if (element) {
+        element.setAttribute("uivisible", true);
+        if (button) button.setAttribute("selected", true);
+    }
 
     currentPage = element;
     currentButton = button;
+
+    console.log(hudFocused);
 }
 
 changePage(searchui);

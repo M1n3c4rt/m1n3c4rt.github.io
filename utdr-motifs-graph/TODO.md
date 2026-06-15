@@ -4,7 +4,7 @@
 - (X) change bg and node style
 - add ch5 songs
 - (X) preview image
-- bandcamp/soundcloud integration
+- (X) bandcamp/soundcloud integration (edit: now using youtube)
 - motif midis
 - (X) fix lag w/ search bar
 - minor fixes
@@ -18,3 +18,6 @@
     - (X) opacity unfocus bug (hell)
     - sounds for closing/opening hud?
     - make it so that clicking off the hud doesn't close it
+- data stuff
+    - Raise Up Your Bat does not have Don't Forget B, but it does have Mike
+    - rename "Titan" to "Heavy Footsteps" and remove its edge with GUARDIAN

@@ -25,13 +25,18 @@ var bounds = {
 }
 
 let youtubeData = {}
-async function loadJson(path, youtubePath) {
-    let rawJson = await fetch(path);
+let tracksData = {}
+async function loadJson(path, youtubePath, tracksPath) {
+    let rawJson = await fetch(rootDirectory + path);
     if (!rawJson.ok) throw new Error(`FATAL: Couldn't retrieve Leitmotifs JSON! ${rawJson.status} - ${rawJson.statusText}`);
 
-    let rawBand = await fetch(youtubePath);
+    let rawBand = await fetch(rootDirectory + youtubePath);
     if (!rawBand.ok) console.warn(`Couldn't retrieve YouTube JSON! ${rawBand.status} - ${rawBand.statusText}`);
     else youtubeData = (await rawBand.json()).tracks;
+
+    let rawTracks = await fetch(rootDirectory + tracksPath);
+    if (!rawTracks.ok) console.warn(`Couldn't retrieve Motif Tracks JSON! ${rawBand.status} - ${rawBand.statusText}`);
+    else tracksData = (await rawTracks.json()).tracks;
 
     rawJson.json().then(refreshTree);
 }
@@ -92,7 +97,7 @@ function refreshTree(newData) {
         removeFrom(isolates, track);
         balls[track].isIsolate = false;
 
-        Object.entries(motifs).forEach(([motif, subdata]) => {
+        Object.entries(motifs).forEach(([index, motif]) => {
             balls[motif].addChild(curBall);
             removeFrom(isolates, motif);
             balls[motif].isIsolate = false;
@@ -142,7 +147,7 @@ function draw(timestamp) {
     // console.log(deltaTime);
     lastDrawTime = timestamp;
 
-    camera.refresh(deltaTime);
+    camera.refresh();
     [cursor.screenX, cursor.screenY] = camera.fromScreenCoords(cursor.x, cursor.y);
 
     if (document.activeElement == document.body) {
@@ -179,6 +184,7 @@ function draw(timestamp) {
     });
 
     sortedIDs.sort((b, a) => balls[a].dist - balls[b].dist);
+    camera.updatePosition(deltaTime);
 
     // Draw balls, apply physics
     Object.entries(sortedIDs).forEach(([i, id]) => {
@@ -403,13 +409,7 @@ document.onwheel = event => {
 }
 
 document.addEventListener("keydown", ({key}) => {
-    if (key === "Escape") {
-        if (ballInFocus) unfocusBall();
-        if (document.activeElement == search) {
-            search.blur();
-        }
-    }
-    else if (key === "w") movement.W = 1;
+    if (key === "w") movement.W = 1;
     else if (key === "a") movement.A = 1;
     else if (key === "s") movement.S = 1;
     else if (key === "d") movement.D = 1;
@@ -419,7 +419,7 @@ document.addEventListener("keydown", ({key}) => {
     else if (key === "D") movement.D = 2;
     // If you're seeing this... no, no you're not :3c
     // (was lazy, didn't feel like making this elegant)
-})
+});
 
 document.addEventListener("keyup", ({key}) => {
     const key2 = key.toLowerCase();
@@ -427,7 +427,7 @@ document.addEventListener("keyup", ({key}) => {
     else if (key2 === "a") movement.A = 0;
     else if (key2 === "s") movement.S = 0;
     else if (key2 === "d") movement.D = 0;
-})
+});
 
 window.onload = (e) => raf = window.requestAnimationFrame(draw);
-loadJson(rootDirectory + "/utdr-leitmotif-graph.json", rootDirectory + "/utdr-youtube.json");
+loadJson("/utdr-leitmotif-graph.json", "/utdr-youtube.json", "/utdr-tracks.json");

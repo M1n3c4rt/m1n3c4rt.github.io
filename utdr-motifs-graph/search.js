@@ -11,6 +11,8 @@ let searchHeight = searchBounds.bottom - searchBounds.top - SEARCH_GAP;
 let searchScroll = 0;
 
 const youtube = document.getElementById("youtubeintegration");
+const trackContainer = document.getElementById("trackcontainer");
+const trackIntegration = document.getElementById("trackintegration");
 
 sfxPagerOut.volume = 0.75;
 sfxNope.volume = 0.5;
@@ -61,7 +63,6 @@ function setBallFocus(ball, sound = true) {
             searchHeight = searchBounds.bottom - searchBounds.top - SEARCH_GAP;
             const newScroll = index * SEARCH_GAP;
 
-            console.log(searchView.scrollTop);
             if (newScroll < searchView.scrollTop) {
                 searchView.scrollTop = newScroll;
             } else if (newScroll > searchView.scrollTop + searchHeight) {
@@ -76,16 +77,18 @@ function setBallFocus(ball, sound = true) {
             sfxPagerIn.play();
         }
 
-        if (ballInFocus.trackID) {
-            youtube.setAttribute("src", src="https://www.youtube.com/embed/" + ballInFocus.trackID);
-            youtube.play();
-            // regex: item_id=([0-9]+)
-            // fetch("https://tobyfox.bandcamp.com/track/" + ballInFocus.trackID)
-            //     .then((response) => {
-            //         const data = response.body.getElementById("pagedata");
-            //         // src="https://bandcamp.com/EmbeddedPlayer/artwork=none/size=small/bgcol=ffffff/linkcol=0687f5/transparent=true/track=3768286999"
-            //         console.log(data);
-            //     });
+        if (ballInFocus.youtubeID) {
+            youtube.setAttribute("src", "https://www.youtube-nocookie.com/embed/" + ballInFocus.youtubeID + "?&autoplay=1");
+            trackIntegration.setAttribute("src", "");
+            trackContainer.pause();
+        } else if (ballInFocus.trackID) {
+            trackIntegration.setAttribute("src", "assets/tracks/" + ballInFocus.trackID + ".ogg");
+            youtube.setAttribute("src", "");
+
+            trackContainer.load();
+            if (trackContainer.volume == 1) trackContainer.volume = 0.3;
+            trackContainer.currentTime = 0;
+            trackContainer.play();
         }
     } else {
         camera.focus.enabled = false;
@@ -116,8 +119,8 @@ function changeSelect(change) {
     setBallFocus(searchResults[index]);
 }
 
-search.addEventListener("keydown", ({key}) => {
-    if (key === "Enter") {
+searchView.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
         if (searchResults.length > 0) {
             setBallFocus(searchResults[searchIndex]);
             searchIndex = (searchIndex + 1) % searchResults.length;
@@ -126,8 +129,13 @@ search.addEventListener("keydown", ({key}) => {
             sfxNope.currentTime = 0;
             sfxNope.play();
         }
-    } else if (key === "ArrowUp") changeSelect(-1);
-    else if (key === "ArrowDown") changeSelect(1);
+    } else if (e.key === "ArrowUp") {
+        changeSelect(-1);
+        e.preventDefault();
+    } else if (e.key === "ArrowDown") {
+        changeSelect(1);
+        e.preventDefault();
+    }
 })
 
 function loadInitialSearch() {

@@ -16,8 +16,5 @@
     - (X) should grid squares scale with camera zoom? (verdict. no)
     - (X) decrease bounds?
     - (X) opacity unfocus bug (hell)
-    - sounds for closing/opening hud?
-    - make it so that clicking off the hud doesn't close it
-- data stuff
-    - Raise Up Your Bat does not have Don't Forget B, but it does have Mike
-    - rename "Titan" to "Heavy Footsteps" and remove its edge with GUARDIAN
+    - (X) sounds for closing/opening hud?
+    - (X) make it so that clicking off the hud doesn't close it

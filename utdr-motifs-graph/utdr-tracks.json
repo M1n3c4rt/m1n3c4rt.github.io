@@ -2,6 +2,10 @@
     "tracks": {
         "uwa___so": "motifs/uwa_so",
         "rouxls_kaard": "motifs/rurus_kaado",
+        "jingle_bells": "motifs/jing_gaster",
+        "doom_board_bassline": "motifs/doom_board_bass",
+        "gerson": "motifs/gerson_placeholder",
+        "roots": "motifs/roots",
         "C-honksong": "unlisted/honksong",
         "B-man": "unlisted/man",
         "D-man_nes": "unlisted/man_nes",

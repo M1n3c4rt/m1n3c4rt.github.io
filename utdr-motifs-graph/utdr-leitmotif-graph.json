@@ -677,11 +677,20 @@
                 "D-69"
             ]
         },
-        "another_medium": {
-            "name": "Another Medium",
+        "waterfall": {
+            "name": "Waterfall",
             "associations": [
                 "ruins",
                 "A-31",
+                "A-51",
+                "A-65",
+                "A-68",
+                "A-95"
+            ]
+        },
+        "another_medium": {
+            "name": "Another Medium",
+            "associations": [
                 "A-51",
                 "A-65",
                 "A-68",
@@ -1168,7 +1177,7 @@
                 "D-72"
             ]
         },
-        "gerson_boom": {
+        "gerson": {
             "name": "Gerson",
             "associations": [
                 "D-51",
@@ -1294,8 +1303,8 @@
                 "D-44"
             ]
         },
-        "digital_roots": {
-            "name": "Digital Roots",
+        "roots": {
+            "name": "Roots",
             "associations": [
                 "C-37",
                 "D-36"
@@ -1308,8 +1317,17 @@
                 "D-34"
             ]
         },
-        "doom_board": {
-            "name": "Doom Board",
+        "doom_board_melody": {
+            "name": "Doom Board (Melody)",
+            "associations": [
+                "tenna",
+                "D-24",
+                "D-25",
+                "D-27"
+            ]
+        },
+        "doom_board_bassline": {
+            "name": "Doom Board (Bassline)",
             "associations": [
                 "D-24",
                 "D-25",
